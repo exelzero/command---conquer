@@ -1,11 +1,6 @@
-import asyncio
-from collections import defaultdict
-
-
 class Wire:
     def __init__(self):
         self._registry: dict = {}
-        self._queues: dict = defaultdict(asyncio.Queue)
         self._cc = None
 
     def set_cc(self, cc):
@@ -24,8 +19,9 @@ class Wire:
         if not target:
             print(f"[WIRE] No agent for '{task.assignee}' — task {task.id} dropped")
             return
-        await self._queues[task.assignee].put(task)
         print(f"[WIRE] {task.id} → {task.assignee}")
+        await target.handle_task(task)
+        await self.report_to_cc(task)
 
     async def send(self, from_name: str, to_name: str, payload: dict):
         from shared.task import Task
