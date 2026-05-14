@@ -91,7 +91,7 @@ command-and-conquer/
 ├── live_feed/
 │   └── monitor.py      # Human-readable snapshot of agents + tasks
 ├── peons/
-│   ├── base_peon.py    # Abstract base: name, session ID, Claude client
+│   ├── base_peon.py    # Abstract base: name, session ID, Claude runner
 │   ├── devworker/
 │   │   ├── worker.py   # Persistent parallel worker peon
 │   │   └── AGENT.md    # DevWorker role, skills, system prompt
@@ -99,12 +99,13 @@ command-and-conquer/
 │       ├── reviewer.py # GitHub peon — PRs, reviews, revisions
 │       └── AGENT.md    # GIDY role, skills, system prompt
 ├── shared/
-│   ├── naming.py       # Anime name pool + assignment
-│   ├── session.py      # Session ID generation
-│   ├── task.py         # Task model: ID, status, creator, assignee
-│   └── claude_client.py # Claude client factory
+│   ├── naming.py        # Anime name pool + assignment
+│   ├── session.py       # Session ID generation
+│   ├── task.py          # Task model: ID, status, creator, assignee
+│   └── claude_runner.py # Runs Claude Code CLI via subprocess (no API key needed)
 ├── config/
 │   └── .env.example
+├── demo.py              # Boots the full system and dispatches a live PR review
 └── requirements.txt
 ```
 
@@ -126,47 +127,19 @@ pip install -r requirements.txt
 
 # Configure environment
 cp config/.env.example config/.env
-# Fill in ANTHROPIC_API_KEY and GITHUB_TOKEN in config/.env
+# Fill in GITHUB_TOKEN and GITHUB_REPO in config/.env
+# No Anthropic API key needed — Claude Code CLI is the AI runtime
 ```
 
 ---
 
 ## Quick Start
 
-```python
-import asyncio
-from wire.core import Wire
-from command_center.core import CommandCenter
-from peons.giddy.reviewer import Giddy
-from live_feed.monitor import LiveFeed
-
-async def main():
-    wire = Wire()
-    cc = CommandCenter(wire)
-
-    # Register Giddy
-    gidy = Giddy()
-    await gidy.start()
-    wire.register(gidy)
-
-    # Spawn two dev workers
-    cc.spawn_worker()
-    cc.spawn_worker()
-
-    # Check live state
-    feed = LiveFeed(wire, cc)
-    feed.snapshot()
-
-    # Dispatch a task
-    task = await cc.dispatch("GIDY", {
-        "action": "review_pr",
-        "repo": "exelzero/command---conquer",
-        "pr_number": 1
-    })
-    print(f"Dispatched {task.id}")
-
-asyncio.run(main())
+```bash
+python demo.py
 ```
+
+`demo.py` boots the full system — registers GIDY, spawns two anime-named DevWorkers, takes a Live Feed snapshot, dispatches a real PR review to GIDY, and snapshots again when done.
 
 ---
 
