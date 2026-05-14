@@ -1,5 +1,10 @@
+from pathlib import Path
+
+from shared.claude_client import chat, load_system_prompt, make_client
 from shared.naming import assign_name
 from shared.task import Task, TaskStatus
+
+_AGENT_MD = Path(__file__).parent / "AGENT.md"
 
 
 class CommandCenter:
@@ -7,6 +12,11 @@ class CommandCenter:
         self.wire = wire
         self.wire.set_cc(self)
         self.tasks: dict[str, Task] = {}
+        self._client = make_client()
+        self._system_prompt = load_system_prompt(str(_AGENT_MD))
+
+    async def think(self, prompt: str) -> str:
+        return chat(self._client, self._system_prompt, prompt, thinking=True)
 
     async def dispatch(self, assignee: str, payload: dict) -> Task:
         task = Task(creator="CC", assignee=assignee, payload=payload)
