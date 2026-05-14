@@ -1,4 +1,3 @@
-import asyncio
 from pathlib import Path
 
 from peons.base_peon import BasePeon
@@ -21,15 +20,10 @@ class DevWorker(BasePeon):
     async def handle_task(self, task: Task):
         print(f"[{self.session_id}] Starting {task.id}")
         task.update_status(TaskStatus.IN_PROGRESS)
-
         prompt = self._build_prompt(task)
         try:
-            result = await asyncio.get_event_loop().run_in_executor(
-                None, lambda: self.think.__wrapped__(self, prompt) if hasattr(self.think, "__wrapped__") else None
-            )
-            if result is None:
-                result = await self.think(prompt)
-            print(f"[{self.session_id}] {task.id} result:\n{result[:300]}...")
+            result = await self.think(prompt)
+            print(f"[{self.session_id}] {task.id} result:\n{result[:300]}")
             task.update_status(TaskStatus.COMPLETED)
         except Exception as e:
             print(f"[{self.session_id}] {task.id} failed: {e}")
